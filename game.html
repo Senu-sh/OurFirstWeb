@@ -1,0 +1,580 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snake & Ladder | My Web Project</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #f7f3f7;
+    color: #403747;
+    text-align: center;
+    padding: 25px 12px;
+}
+
+header {
+    margin-bottom: 25px;
+}
+
+header h1 {
+    color: #795d85;
+    font-size: 35px;
+    margin-bottom: 8px;
+}
+
+header p {
+    color: #827487;
+}
+
+.game-container {
+    max-width: 850px;
+    margin: auto;
+    background: white;
+    padding: 25px;
+    border-radius: 20px;
+    box-shadow: 0 5px 25px #00000010;
+}
+
+.game-layout {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 25px;
+}
+
+/* Game board */
+
+.board {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    width: min(100%, 550px);
+    aspect-ratio: 1;
+    border: 3px solid #806b87;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.cell {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 4px;
+    font-size: clamp(9px, 2vw, 14px);
+    font-weight: bold;
+    border: 1px solid #ffffff;
+    background: #f0e8f1;
+}
+
+.cell:nth-child(even) {
+    background: #e5d9e9;
+}
+
+.cell.start {
+    background: #d9efdf;
+}
+
+.cell.finish {
+    background: #f7e1b7;
+}
+
+.cell.snake {
+    background: #f3d7d7;
+}
+
+.cell.ladder {
+    background: #d6e8f4;
+}
+
+.cell-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.special {
+    font-size: clamp(11px, 2.5vw, 19px);
+}
+
+.tokens {
+    display: flex;
+    gap: 2px;
+    font-size: clamp(12px, 2.5vw, 19px);
+    position: absolute;
+    bottom: 3px;
+}
+
+/* Controls */
+
+.controls {
+    width: 230px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    align-items: center;
+}
+
+.player-card {
+    width: 100%;
+    padding: 15px;
+    border-radius: 12px;
+    background: #f5eff6;
+    border: 2px solid transparent;
+}
+
+.player-card.active {
+    border-color: #92759b;
+    background: #eee3f1;
+}
+
+.player-card h3 {
+    margin-bottom: 5px;
+}
+
+.player-card p {
+    font-size: 14px;
+}
+
+.dice {
+    font-size: 75px;
+    color: #806b87;
+    transition: transform 0.3s;
+}
+
+.dice.roll {
+    transform: rotate(360deg);
+}
+
+button {
+    border: none;
+    padding: 13px 25px;
+    border-radius: 30px;
+    background: #806b87;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+button:hover {
+    background: #66516e;
+    transform: translateY(-2px);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+#message {
+    min-height: 50px;
+    padding: 12px;
+    background: #f7f3f7;
+    border-radius: 10px;
+    font-size: 14px;
+    width: 100%;
+}
+
+#restart {
+    background: #c18d9c;
+}
+
+.instructions {
+    max-width: 750px;
+    margin: 30px auto;
+    text-align: left;
+    padding: 20px;
+    background: white;
+    border-radius: 15px;
+}
+
+.instructions h2 {
+    color: #795d85;
+    margin-bottom: 12px;
+}
+
+.instructions li {
+    margin: 7px 0 7px 20px;
+}
+
+footer {
+    padding: 25px;
+    color: #806b87;
+}
+
+@media(max-width: 600px) {
+    .game-container {
+        padding: 12px;
+    }
+
+    .game-layout {
+        gap: 18px;
+    }
+
+    .controls {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    #message {
+        grid-column: span 2;
+    }
+
+    .dice {
+        font-size: 55px;
+    }
+
+    header h1 {
+        font-size: 28px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>🐍 Snake & Ladder 🎲</h1>
+    <p>Roll the dice, climb the ladders and avoid the snakes!</p>
+</header>
+
+<div class="game-container">
+
+    <div class="game-layout">
+
+        <!-- BOARD -->
+        <div class="board" id="board"></div>
+
+        <!-- GAME CONTROLS -->
+        <div class="controls">
+
+            <div class="player-card active" id="card1">
+                <h3>🔴 Player 1</h3>
+                <p>Position: <span id="pos1">0</span></p>
+            </div>
+
+            <div class="player-card" id="card2">
+                <h3>🔵 Player 2</h3>
+                <p>Position: <span id="pos2">0</span></p>
+            </div>
+
+            <div>
+                <div class="dice" id="dice">🎲</div>
+                <button id="rollBtn" onclick="rollDice()">
+                    Roll Dice
+                </button>
+            </div>
+
+            <div id="message">
+                Player 1, it's your turn!
+            </div>
+
+            <button id="restart" onclick="restartGame()">
+                ↻ Restart Game
+            </button>
+
+        </div>
+    </div>
+</div>
+
+<!-- INSTRUCTIONS -->
+<section class="instructions">
+    <h2>📖 How to Play</h2>
+    <ol>
+        <li>Two players take turns rolling the dice.</li>
+        <li>Move your token forward according to the dice number.</li>
+        <li>If you land at the bottom of a ladder, climb up!</li>
+        <li>If you land on a snake's head, slide down!</li>
+        <li>You must land exactly on square 100 to win.</li>
+        <li>The first player to reach square 100 wins!</li>
+    </ol>
+    <p style="margin-top:15px">
+        <strong>Good luck! 🏆</strong>
+    </p>
+</section>
+
+<footer>
+    <p>Made with ♥ by an aspiring web developer.</p>
+    <p>My journey starts here!</p>
+</footer>
+
+
+<script>
+
+// GAME VARIABLES
+
+let players = [0, 0];
+let currentPlayer = 0;
+let gameOver = false;
+
+// Snakes: head position → tail position
+const snakes = {
+    99: 54,
+    70: 55,
+    52: 42,
+    25: 2,
+    95: 72,
+    87: 57,
+    64: 60
+};
+
+// Ladders: bottom position → top position
+const ladders = {
+    4: 25,
+    13: 46,
+    33: 49,
+    42: 63,
+    50: 69,
+    62: 81,
+    74: 92
+};
+
+// BOARD CREATION
+
+const board = document.getElementById("board");
+
+function createBoard() {
+
+    board.innerHTML = "";
+
+    // Create squares from 100 down to 1
+    for (let row = 9; row >= 0; row--) {
+
+        for (let col = 0; col < 10; col++) {
+
+            let number;
+
+            if (row % 2 === 0) {
+                number = row * 10 + col + 1;
+            } else {
+                number = row * 10 + (10 - col);
+            }
+
+            const cell = document.createElement("div");
+            cell.classList.add("cell");
+            cell.id = "cell-" + number;
+
+            if (number === 1) {
+                cell.classList.add("start");
+            }
+
+            if (number === 100) {
+                cell.classList.add("finish");
+            }
+
+            let symbol = "";
+
+            if (snakes[number]) {
+                cell.classList.add("snake");
+                symbol = "🐍";
+            }
+
+            if (ladders[number]) {
+                cell.classList.add("ladder");
+                symbol = "🪜";
+            }
+
+            cell.innerHTML = `
+                <div class="cell-content">
+                    <span>${number}</span>
+                    <span class="special">${symbol}</span>
+                </div>
+                <div class="tokens" id="tokens-${number}"></div>
+            `;
+
+            board.appendChild(cell);
+        }
+    }
+
+    updateBoard();
+}
+
+
+// UPDATE PLAYER POSITIONS
+
+function updateBoard() {
+
+    // Clear all existing tokens
+    for (let i = 1; i <= 100; i++) {
+        document.getElementById("tokens-" + i).innerHTML = "";
+    }
+
+    // Place player tokens
+    players.forEach((position, index) => {
+
+        if (position > 0) {
+
+            const token = document.createElement("span");
+
+            token.textContent = index === 0 ? "🔴" : "🔵";
+
+            document.getElementById("tokens-" + position)
+                .appendChild(token);
+        }
+    });
+
+    document.getElementById("pos1").textContent = players[0];
+    document.getElementById("pos2").textContent = players[1];
+
+    // Highlight active player
+    document.getElementById("card1").classList.toggle(
+        "active", currentPlayer === 0
+    );
+
+    document.getElementById("card2").classList.toggle(
+        "active", currentPlayer === 1
+    );
+}
+
+
+// DICE ROLLING
+
+function rollDice() {
+
+    if (gameOver) return;
+
+    const dice = document.getElementById("dice");
+    const rollBtn = document.getElementById("rollBtn");
+
+    rollBtn.disabled = true;
+
+    let result = Math.floor(Math.random() * 6) + 1;
+
+    dice.classList.add("roll");
+    dice.textContent = "🎲";
+
+    setTimeout(() => {
+
+        dice.classList.remove("roll");
+
+        const diceFaces = [
+            "", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"
+        ];
+
+        dice.textContent = diceFaces[result];
+
+        movePlayer(result);
+
+    }, 400);
+}
+
+
+// MOVE PLAYER
+
+function movePlayer(diceValue) {
+
+    let oldPosition = players[currentPlayer];
+    let newPosition = oldPosition + diceValue;
+
+    let message = `Player ${currentPlayer + 1} rolled a ${diceValue}. `;
+
+    // Check if player can reach square 100
+    if (newPosition > 100) {
+
+        message += "You need the exact number to reach 100!";
+
+    } else {
+
+        players[currentPlayer] = newPosition;
+
+        // Check for ladders
+        if (ladders[newPosition]) {
+
+            message += `Great! You climbed a ladder from ${newPosition} to ${ladders[newPosition]}! 🪜`;
+
+            players[currentPlayer] = ladders[newPosition];
+
+        }
+
+        // Check for snakes
+        else if (snakes[newPosition]) {
+
+            message += `Oh no! A snake took you from ${newPosition} to ${snakes[newPosition]}! 🐍`;
+
+            players[currentPlayer] = snakes[newPosition];
+
+        } else {
+
+            message += `You moved to square ${newPosition}.`;
+
+        }
+
+    }
+
+    updateBoard();
+
+    // Check winner
+    if (players[currentPlayer] === 100) {
+
+        gameOver = true;
+
+        document.getElementById("message").innerHTML =
+            `🏆 Player ${currentPlayer + 1} WINS! Congratulations!`;
+
+        document.getElementById("rollBtn").disabled = true;
+
+        return;
+    }
+
+    // Display message
+    document.getElementById("message").textContent = message;
+
+    // Change player turn
+    currentPlayer = currentPlayer === 0 ? 1 : 0;
+
+    setTimeout(() => {
+
+        if (!gameOver) {
+
+            document.getElementById("message").textContent +=
+                ` Now it's Player ${currentPlayer + 1}'s turn!`;
+
+            updateBoard();
+
+            document.getElementById("rollBtn").disabled = false;
+
+        }
+
+    }, 1000);
+}
+
+
+// RESTART GAME
+
+function restartGame() {
+
+    players = [0, 0];
+    currentPlayer = 0;
+    gameOver = false;
+
+    document.getElementById("dice").textContent = "🎲";
+    document.getElementById("message").textContent =
+        "Player 1, it's your turn!";
+
+    document.getElementById("rollBtn").disabled = false;
+
+    updateBoard();
+}
+
+
+// START GAME
+
+createBoard();
+
+</script>
+
+</body>
+</html>
